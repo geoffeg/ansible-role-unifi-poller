@@ -1,0 +1,40 @@
+---
+- name: check if caddy is installed
+  stat:
+    path: "/usr/local/bin/caddy"
+  register: __caddy_is_installed
+
+- name: include caddy only to set reverse proxy
+  include_role:
+    name: ansible-caddy
+    tasks_from: revproxy
+  when: __caddy_is_installed.stat.exists
+  vars:
+    caddy_confd_configs:
+      - vhost: unifi_exporter
+        config: |
+          {{ unifi_exporter_reverse_proxy_domain }} {
+            prometheus
+            basicauth / {{ unifi_exporter_reverse_proxy_http_user }} {{ unifi_exporter_reverse_proxy_http_pass }}
+            tls {{ unifi_exporter_reverse_proxy_tls | default('self_signed') }}
+            proxy / http://{{ unifi_exporter_web_listen_address }}:{{ unifi_exporter_web_listen_port }} {
+              transparent
+            }
+          }
+
+- name: include caddy installation and set reverse proxy
+  include_role:
+    name: ansible-caddy
+  when: not __caddy_is_installed.stat.exists
+  vars:
+    caddy_confd_configs:
+      - vhost: unifi_exporter
+        config: |
+          {{ unifi_exporter_reverse_proxy_domain }} {
+            prometheus
+            basicauth / {{ unifi_exporter_reverse_proxy_http_user }} {{ unifi_exporter_reverse_proxy_http_pass }}
+            tls {{ unifi_exporter_reverse_proxy_tls | default('self_signed') }}
+            proxy / http://{{ unifi_exporter_web_listen_address }}:{{ unifi_exporter_web_listen_port }} {
+              transparent
+            }
+          }

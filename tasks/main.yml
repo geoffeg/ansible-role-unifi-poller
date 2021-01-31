@@ -1,0 +1,33 @@
+---
+- name: gather operating system variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution | lower }}-{{ ansible_distribution_version | lower }}.yml"
+    - "{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version | lower }}.yml"
+    - "{{ ansible_distribution_file_variety | lower }}-{{ ansible_distribution_major_version | lower }}.yml"
+    - "{{ ansible_os_family | lower }}-{{ ansible_distribution_major_version | lower }}.yml"
+    - "{{ ansible_distribution | lower }}.yml"
+    - "{{ ansible_os_family | lower }}-{{ ansible_distribution_version.split('.')[0] }}.yml"
+    - "{{ ansible_os_family | lower }}.yml"
+
+- include: user.yml
+
+- include: release.yml
+
+- include: install.yml
+  #when: (not __unifi_exporter_is_installed.stat.exists) or (__unifi_exporter_current_version_output.stderr_lines[0].split(" ")[2] != unifi_exporter_version)
+  when: (not __unifi_exporter_is_installed.stat.exists)
+
+- include: configure.yml
+
+- include: selinux.yml
+
+- name: ensure unifi_exporter is enabled on boot
+  systemd:
+    daemon_reload: true
+    name: unifi-poller
+    enabled: true
+    state: started
+
+- include_tasks: revproxy.yml
+  when: unifi_exporter_reverse_proxy

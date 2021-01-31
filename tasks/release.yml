@@ -1,0 +1,13 @@
+---
+- name: check if unifi_exporter is installed
+  stat:
+    path: "/usr/bin/unifi-poller"
+  register: __unifi_exporter_is_installed
+
+- name: gather currently installed unifi_exporter version (if any)
+  command: "/usr/bin/unifi-poller --version"
+  args:
+    warn: false
+  changed_when: false
+  register: __unifi_exporter_current_version_output
+  when: __unifi_exporter_is_installed.stat.exists

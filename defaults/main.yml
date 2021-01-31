@@ -1,0 +1,18 @@
+---
+unifi_exporter_version: 1.6.3
+unifi_exporter_web_listen_address: "0.0.0.0"
+unifi_exporter_web_listen_port: "9130"
+unifi_exporter_system_user: "{{ prometheus_user | default('prometheus') }}"
+unifi_exporter_system_group: "{{ prometheus_group | default('prometheus') }}"
+unifi_exporter_config_dir: "/etc/unifi-poller"
+unifi_exporter_config_file: "up.conf"
+unifi_controller_url: "https://127.0.0.1:8443"
+unifi_controller_user: "unifiro"
+unifi_controller_pass: "giveme"
+unifi_exporter_reverse_proxy: false
+unifi_exporter_reverse_proxy_tls: self-signed # or email for letsencrypt
+unifi_exporter_reverse_proxy_domain: "unifi_exporter.{{ ansible_hostname }}.{{ ansible_domain }}"
+unifi_exporter_reverse_proxy_http_user: "{{ prometheus_http_user | default('promtheus') }}"
+unifi_exporter_reverse_proxy_http_pass: "{{ prometheus_http_group | default('prometheus') }}"
+
+#https://github.com/unifi-poller/unifi-poller/releases/download/v1.6.3/unifi-poller_1.6.3-641_armhf.deb
