@@ -3,3 +3,4 @@ skip_list:
 warn_list:  # or 'skip_list' to silence them completely
   - command-instead-of-module  # Using command rather than module
   - var-spacing  # Variables should have spaces before and after:  {{ var_name }}
+  - meta-no-tags  # Tags must contain lowercase letters and digits only
