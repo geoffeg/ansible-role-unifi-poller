@@ -1,18 +1,51 @@
 ---
-unifi_exporter_version: 1.6.3
-unifi_exporter_web_listen_address: "0.0.0.0"
-unifi_exporter_web_listen_port: "9130"
-unifi_exporter_system_user: "{{ prometheus_user | default('prometheus') }}"
-unifi_exporter_system_group: "{{ prometheus_group | default('prometheus') }}"
-unifi_exporter_config_dir: "/etc/unifi-poller"
-unifi_exporter_config_file: "up.conf"
-unifi_controller_url: "https://127.0.0.1:8443"
-unifi_controller_user: "unifiro"
-unifi_controller_pass: "giveme"
-unifi_exporter_reverse_proxy: false
-unifi_exporter_reverse_proxy_tls: self-signed # or email for letsencrypt
-unifi_exporter_reverse_proxy_domain: "unifi_exporter.{{ ansible_hostname }}.{{ ansible_domain }}"
-unifi_exporter_reverse_proxy_http_user: "{{ prometheus_http_user | default('promtheus') }}"
-unifi_exporter_reverse_proxy_http_pass: "{{ prometheus_http_group | default('prometheus') }}"
-
-#https://github.com/unifi-poller/unifi-poller/releases/download/v1.6.3/unifi-poller_1.6.3-641_armhf.deb
+proxy_env: {}
+unifi_poller_version: 2.1.3
+unifi_poller_system_user: unifi_poller
+unifi_poller_system_group: unifi_poller
+unifi_poller_binary_install_dir: /usr/local/bin
+unifi_poller_config_path: /etc/unifi_poller
+unifi_poller_config_file: config.yaml
+# For detailed configuration see https://github.com/unpoller/unpoller/blob/master/examples/up.json.example
+unifi_poller_config:
+  prometheus:
+    disable: false
+    http_listen: "0.0.0.0:9130"
+    ssl_cert_path: ""
+    ssl_key_path: ""
+    report_errors: false
+  influxdb:
+    disable: true
+  webserver:
+    enable: false
+  unifi:
+    dynamic: false
+    defaults:
+      url:  "https://127.0.0.1:8443"
+      user: "unifipoller"
+      pass: "unifipoller"
+      sites:
+        - all
+      save_ids: false
+      save_events: false
+      save_alarms: false
+      save_anomalies: false
+      save_dpi: false
+      save_sites: true
+      hash_pii: false
+      verify_ssl: false
+    controllers:
+    # Repeat the following stanza to poll multiple controllers.
+      - url:  "https://127.0.0.1:8443"
+        user: "unifipoller"
+        pass: "unifipoller"
+        sites:
+          - all
+        save_ids: false
+        save_events: false
+        save_alarms: false
+        save_anomalies: false
+        save_dpi: false
+        save_sites: true
+        hash_pii: false
+        verify_ssl: false

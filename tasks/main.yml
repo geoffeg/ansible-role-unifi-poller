@@ -1,33 +1,137 @@
 ---
-- name: gather operating system variables
-  include_vars: "{{ item }}"
-  with_first_found:
-    - "{{ ansible_distribution | lower }}-{{ ansible_distribution_version | lower }}.yml"
-    - "{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version | lower }}.yml"
-    - "{{ ansible_distribution_file_variety | lower }}-{{ ansible_distribution_major_version | lower }}.yml"
-    - "{{ ansible_os_family | lower }}-{{ ansible_distribution_major_version | lower }}.yml"
-    - "{{ ansible_distribution | lower }}.yml"
-    - "{{ ansible_os_family | lower }}-{{ ansible_distribution_version.split('.')[0] }}.yml"
-    - "{{ ansible_os_family | lower }}.yml"
+- name: create system group
+  group:
+    name: "{{ unifi_poller_system_group }}"
+    system: true
+    state: present
+  when: unifi_poller_system_group != "root"
+  become: true
+  tags: unifi_poller
 
-- include: user.yml
+- name: create system user
+  user:
+    name: "{{ unifi_poller_system_user }}"
+    system: true
+    shell: "/sbin/nologin"
+    group: "{{ unifi_poller_system_group }}"
+    createhome: false
+  when: unifi_poller_system_user != "root"
+  become: true
+  tags: unifi_poller
 
-- include: release.yml
+- name: create directory
+  file:
+    path: "{{ unifi_poller_config_path }}"
+    state: directory
+    owner: "{{ unifi_poller_system_user }}"
+    group: "{{ unifi_poller_system_group }}"
+    mode: "0755"
+  become: true
+  tags: unifi_poller
 
-- include: install.yml
-  #when: (not __unifi_exporter_is_installed.stat.exists) or (__unifi_exporter_current_version_output.stderr_lines[0].split(" ")[2] != unifi_exporter_version)
-  when: (not __unifi_exporter_is_installed.stat.exists)
+- name: check if is installed
+  stat:
+    path: "{{ unifi_poller_binary_install_dir }}/unifi_poller"
+  register: __unifi_poller_is_installed
+  become: true
+  tags: unifi_poller
 
-- include: configure.yml
+- name: gather currently installed unifi_poller version (if any)
+  command: "{{ unifi_poller_binary_install_dir }}/unifi_poller --version"
+  args:
+    warn: false
+  changed_when: false
+  register: __unifi_poller_current_version_output
+  when: __unifi_poller_is_installed.stat.exists
+  become: true
+  tags: unifi_poller
 
-- include: selinux.yml
+- name: localhost - get checksum list from github
+  set_fact:
+    _checksums: "{{ lookup('url', 'https://github.com/unpoller/unpoller/releases/download/v' + unifi_poller_version + '/checksums.sha256.txt', wantlist=True) | list }}"
+  environment: "{{ proxy_env }}"
+  delegate_to: localhost
+  run_once: true
+  become: true
+  tags: unifi_poller
+  when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
 
-- name: ensure unifi_exporter is enabled on boot
+- name: localhost - get checksum for {{ go_arch }} architecture
+  set_fact:
+    unifi_poller_checksum: "{{ item.split('*')[1] }}"
+  with_items: "{{ _checksums }}"
+  delegate_to: localhost
+  when:
+    - "('unifi-poller_' + go_arch + '.linux.gz') in item"
+    - (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
+  become: true
+  tags: unifi_poller
+
+- name: localhost - download binary to local folder
+  get_url:
+    url: "https://github.com/unpoller/unpoller/releases/download/v{{ unifi_poller_version }}/unifi-poller.{{ go_arch }}.linux.gz"
+    dest: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz"
+    checksum: "sha256:{{ unifi_poller_checksum }}"
+  environment: "{{ proxy_env }}"
+  register: _download_archive
+  until: _download_archive is succeeded
+  retries: 5
+  delay: 2
+  delegate_to: localhost
+  check_mode: false
+  become: true
+  tags: unifi_poller
+  when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
+
+- name: localhost - unpack binaries
+  unarchive:
+    src: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz"
+    dest: "/tmp"
+  delegate_to: localhost
+  check_mode: false
+  become: true
+  tags: unifi_poller
+  when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
+
+- name: propagate binaries
+  copy:
+    src: "/tmp/unifi_poller.{{ go_arch }}.linux"
+    dest: "{{ unifi_poller_binary_install_dir }}/unifi_poller"
+    mode: "0755"
+    owner: "root"
+    group: "root"
+  notify: restart unifi_poller
+  become: true
+  tags: unifi_poller
+  when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
+
+- name: generate config file
+  copy:
+    content: "{{ lookup('vars', item) | to_nice_json(indent=2, sort_keys=False) }}\n"
+    dest: "{{ unifi_poller_config_path }}/{{ unifi_poller_config_file }}"
+    owner: "{{ unifi_poller_system_user }}"
+    group: "{{ unifi_poller_system_group }}"
+    mode: "0640"
+  with_items: "{{ unifi_poller_config }}"
+  notify: restart unifi_poller
+  become: true
+  tags: unifi_poller
+
+- name: copy systemd service file
+  template:
+    src: unifi_poller.service.j2
+    dest: /etc/systemd/system/unifi_poller.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart unifi_poller
+  become: true
+  tags: unifi_poller
+
+- name: ensure service is started and enabled
   systemd:
     daemon_reload: true
-    name: unifi-poller
+    name: unifi_poller
     enabled: true
-    state: started
-
-- include_tasks: revproxy.yml
-  when: unifi_exporter_reverse_proxy
+  become: true
+  tags: unifi_poller
