@@ -1,0 +1,19 @@
+{{ ansible_managed | comment}}
+[Unit]
+Description=Unifi Poller
+Documentation=https://github.com/unpoller/unpoller
+After=network.target
+Requires=network.target
+
+[Service]
+Type=simple
+User={{ unifi_poller_system_user }}
+Group={{ unifi_poller_system_group }}
+ExecStart={{ unifi_poller_binary_local_dir }}/unifi_poller --config={{ unifi_poller_config_path }}/{{ unifi_poller_config_file }}
+SyslogIdentifier=unifi_poller
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
