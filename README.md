@@ -2,7 +2,6 @@
 
 [![ubuntu-18](https://img.shields.io/badge/ubuntu-18.x-orange?style=flat&logo=ubuntu)](https://ubuntu.com/)
 [![ubuntu-20](https://img.shields.io/badge/ubuntu-20.x-orange?style=flat&logo=ubuntu)](https://ubuntu.com/)
-
 [![License](https://img.shields.io/badge/license-MIT%20License-brightgreen.svg?style=flat)](https://opensource.org/licenses/MIT)
 [![GitHub issues](https://img.shields.io/github/issues/OnkelDom/ansible-role-unifi-poller?style=flat)](https://github.com/OnkelDom/ansible-role-unifi-poller/issues)
 [![GitHub tag](https://img.shields.io/github/tag/OnkelDom/ansible-role-unifi-poller.svg?style=flat)](https://github.com/OnkelDom/ansible-role-unifi-poller/tags)
