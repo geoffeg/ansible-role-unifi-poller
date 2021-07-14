@@ -14,7 +14,7 @@
 
 ## Description
 
-Deploy and manage prometheus [Unifi Poller](https://github.com/unpoller/unpoller/) using ansible.
+Deploy and manage prometheus [Unifi Poller](https://github.com/unpoller/unpoller/) using ansible. This in an Prometheus Exporter for Unifi Controller.
 
 For detailed configuration see [Unifi Poller config example](https://github.com/unpoller/unpoller/blob/master/examples/up.json.example).
 
