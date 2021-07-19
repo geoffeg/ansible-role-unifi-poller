@@ -29,7 +29,6 @@ All variables which can be overridden are stored in [defaults/main.yml](defaults
 | `unifi_poller_system_group` | unifi_poller | System user group |
 | `unifi_poller_binary_install_dir` | /usr/local/bin | Binary install folder |
 | `unifi_poller_config_path` | /etc/unifi_poller | Config folder |
-| `unifi_poller_config_file` | config.yaml | Config file name |
 | `unifi_poller_config` | {} | Configuration |
 
 ## Example

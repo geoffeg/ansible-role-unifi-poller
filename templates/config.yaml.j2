@@ -1,0 +1,5 @@
+{{ ansible_managed | comment }}
+
+{% if unifi_poller_config | length %}
+{{ unifi_poller_config | to_nice_yaml(indent=2,sort_keys=False) }}
+{% endif %}

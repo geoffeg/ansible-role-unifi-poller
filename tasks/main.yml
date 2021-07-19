@@ -58,11 +58,11 @@
 
 - name: localhost - get checksum for {{ go_arch }} architecture
   set_fact:
-    unifi_poller_checksum: "{{ item.split('*')[1] }}"
+    unifi_poller_checksum: "{{ item.split(' ')[0] }}"
   with_items: "{{ _checksums }}"
   delegate_to: localhost
   when:
-    - "('unifi-poller_' + go_arch + '.linux.gz') in item"
+    - "('unifi-poller.' + go_arch + '.linux.gz') in item"
     - (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
   become: true
   tags: unifi_poller
@@ -84,9 +84,10 @@
   when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
 
 - name: localhost - unpack binaries
-  unarchive:
-    src: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz"
-    dest: "/tmp"
+  shell: /usr/bin/gzip -f -d /tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz
+#  unarchive:
+#    src: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz"
+#    dest: "/tmp"
   delegate_to: localhost
   check_mode: false
   become: true
@@ -95,7 +96,7 @@
 
 - name: propagate binaries
   copy:
-    src: "/tmp/unifi_poller.{{ go_arch }}.linux"
+    src: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}"
     dest: "{{ unifi_poller_binary_install_dir }}/unifi_poller"
     mode: "0755"
     owner: "root"
@@ -105,17 +106,19 @@
   tags: unifi_poller
   when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
 
-- name: generate config file
-  copy:
-    content: "{{ lookup('vars', item) | to_nice_json(indent=2, sort_keys=False) }}\n"
-    dest: "{{ unifi_poller_config_path }}/{{ unifi_poller_config_file }}"
+- name: copy config
+  template:
+    force: true
+    src: config.yaml.j2
+    dest: "{{ unifi_poller_config_path }}/config.yaml"
     owner: "{{ unifi_poller_system_user }}"
     group: "{{ unifi_poller_system_group }}"
-    mode: "0640"
-  with_items: "{{ unifi_poller_config }}"
+    mode: 0644
   notify: restart unifi_poller
   become: true
-  tags: unifi_poller
+  tags:
+    - unifi_poller
+    - unifi_poller_config
 
 - name: copy systemd service file
   template:
