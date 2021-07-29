@@ -54,7 +54,6 @@
   run_once: true
   become: true
   tags: unifi_poller
-  when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
 
 - name: localhost - get checksum for {{ go_arch }} architecture
   set_fact:
@@ -62,8 +61,8 @@
   with_items: "{{ _checksums }}"
   delegate_to: localhost
   when:
-    - "('unifi-poller.' + go_arch + '.linux.gz') in item"
-    - (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
+    - "('unifi-poller_' + go_arch + '.linux.gz') in item"
+    - (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stdout_lines[0].split(" ")[2] != unifi_poller_version)
   become: true
   tags: unifi_poller
 
@@ -81,7 +80,7 @@
   check_mode: false
   become: true
   tags: unifi_poller
-  when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
+  when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stdout_lines[0].split(" ")[2] != unifi_poller_version)
 
 - name: localhost - unpack binaries
   shell: /usr/bin/gzip -f -d /tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz
@@ -92,7 +91,7 @@
   check_mode: false
   become: true
   tags: unifi_poller
-  when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
+  when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stdout_lines[0].split(" ")[2] != unifi_poller_version)
 
 - name: propagate binaries
   copy:
@@ -104,7 +103,7 @@
   notify: restart unifi_poller
   become: true
   tags: unifi_poller
-  when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stderr_lines[0].split(" ")[2] != unifi_poller_version)
+  when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stdout_lines[0].split(" ")[2] != unifi_poller_version)
 
 - name: copy config
   template:
