@@ -61,7 +61,7 @@
   with_items: "{{ _checksums }}"
   delegate_to: localhost
   when:
-    - "('unifi-poller_' + go_arch + '.linux.gz') in item"
+    - "('unifi-poller.' + go_arch + '.linux.gz') in item"
     - (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stdout_lines[0].split(" ")[2] != unifi_poller_version)
   become: true
   tags: unifi_poller
