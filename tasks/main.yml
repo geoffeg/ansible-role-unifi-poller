@@ -48,7 +48,7 @@
 
 - name: localhost - get checksum list from github
   set_fact:
-    _checksums: "{{ lookup('url', 'https://github.com/unpoller/unpoller/releases/download/v' + unifi_poller_version + '/checksums.sha256.txt', wantlist=True) | list }}"
+    _checksums: "{{ lookup('url', 'https://github.com/unpoller/unpoller/releases/download/v' + unifi_poller_version + '/unpoller_' + unifi_poller_version + '_checksums.txt', wantlist=True) | list }}"
   environment: "{{ proxy_env }}"
   delegate_to: localhost
   run_once: true
