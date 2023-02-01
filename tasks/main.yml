@@ -61,14 +61,14 @@
   with_items: "{{ _checksums }}"
   delegate_to: localhost
   when:
-    - "('unifi-poller.' + go_arch + '.linux.gz') in item"
+    - "('unpoller_' + unifi_poller_version + '_linux_' + go_arch + '.tar.gz') in item"
     - (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stdout_lines[0].split(" ")[2] != unifi_poller_version)
   become: true
   tags: unifi_poller
 
 - name: localhost - download binary to local folder
   get_url:
-    url: "https://github.com/unpoller/unpoller/releases/download/v{{ unifi_poller_version }}/unifi-poller.{{ go_arch }}.linux.gz"
+    url: "https://github.com/unpoller/unpoller/releases/download/v{{ unifi_poller_version }}/unpoller_{{ unifi_poller_version }}_linux_{{ go_arch }}.tar.gz"
     dest: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz"
     checksum: "sha256:{{ unifi_poller_checksum }}"
   environment: "{{ proxy_env }}"
@@ -83,10 +83,10 @@
   when: (not __unifi_poller_is_installed.stat.exists) or (__unifi_poller_current_version_output.stdout_lines[0].split(" ")[2] != unifi_poller_version)
 
 - name: localhost - unpack binaries
-  shell: /usr/bin/gzip -f -d /tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz
-#  unarchive:
-#    src: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz"
-#    dest: "/tmp"
+  # shell: /usr/bin/tar -xvcf /tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz
+  unarchive:
+    src: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}.gz"
+    dest: "/tmp"
   delegate_to: localhost
   check_mode: false
   become: true
@@ -95,8 +95,8 @@
 
 - name: propagate binaries
   copy:
-    src: "/tmp/unifi_poller-{{ unifi_poller_version }}.linux-{{ go_arch }}"
-    dest: "{{ unifi_poller_binary_install_dir }}/unifi_poller"
+    src: "/tmp/unpoller"
+    dest: "{{ unifi_poller_binary_install_dir }}/unpoller"
     mode: "0755"
     owner: "root"
     group: "root"
